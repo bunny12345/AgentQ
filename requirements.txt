@@ -1,0 +1,6 @@
+boto3
+botocore
+langchain
+langchain-community
+langchain-aws
+faiss-cpu
