@@ -7,7 +7,7 @@ RUN yum install -y git gcc g++ make
 COPY requirements.txt .
 
 # Install deps (with faiss fix)
-RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt 
     # && pip install --no-cache-dir faiss-cpu==1.7.4.post2 --target "${LAMBDA_TASK_ROOT}"
 
 # Copy app code
