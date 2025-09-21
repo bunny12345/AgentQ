@@ -1,16 +1,17 @@
 FROM public.ecr.aws/lambda/python:3.11
 
-# Install system dependencies
+# Install system deps
 RUN yum install -y git gcc g++ make
 
 # Copy requirements
 COPY requirements.txt .
 
-# Install Python deps
-RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
-RUN pip install -qU langchain-community faiss-cpu
+# Install deps (with faiss fix)
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt --target "${LAMBDA_TASK_ROOT}" \
+    && pip install --no-cache-dir faiss-cpu==1.7.4.post2 --target "${LAMBDA_TASK_ROOT}"
+
 # Copy app code
 COPY agent.py ${LAMBDA_TASK_ROOT}
 
-# Set the Lambda handler
 CMD ["agent.lambda_handler"]

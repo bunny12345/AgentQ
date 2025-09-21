@@ -3,4 +3,3 @@ botocore
 langchain
 langchain-community
 langchain-aws
-# faiss-cpu==1.7.4 
