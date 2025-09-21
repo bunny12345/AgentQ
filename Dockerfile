@@ -12,6 +12,6 @@ RUN pip install --upgrade pip \
     && pip install --no-cache-dir faiss-cpu==1.7.4.post2 --target "${LAMBDA_TASK_ROOT}"
 
 # Copy app code
-COPY agent.py ${LAMBDA_TASK_ROOT}
+COPY query_agent.py ${LAMBDA_TASK_ROOT}
 
 CMD ["agent.lambda_handler"]
