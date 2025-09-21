@@ -1,4 +1,6 @@
 [
   {"owner": "bunny12345", "repo": "langchain", "branch": "main"},
-  {"owner": "bunny12345", "repo": "monitoring-service", "branch": "main"}
+  {"owner": "bunny12345", "repo": "AgentQ", "branch": "main"},
+  {"owner": "bunny12345", "repo": "chatvista_ai", "branch": "main"},
+  {"owner": "bunny12345", "repo": "ChatbotAi", "branch": "main"}
 ]
