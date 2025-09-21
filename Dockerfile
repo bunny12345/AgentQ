@@ -8,7 +8,7 @@ COPY requirements.txt .
 
 # Install Python deps
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
-
+RUN pip install faiss-cpu
 # Copy app code
 COPY agent.py ${LAMBDA_TASK_ROOT}
 
