@@ -3,8 +3,8 @@ name: Build & Upload FAISS Index
 on:
   push:
     branches: [ "main" ]
-  schedule:
-    - cron: "0 3 * * *"   # run daily at 03:00 UTC
+  # schedule:
+  #   - cron: "0 3 * * *"   # run daily at 03:00 UTC
   workflow_dispatch:
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
         env:
           AWS_REGION: eu-west-1
           EMBED_S3_BUCKET: monitoring-agent-embeddings-repo
-          EMBED_S3_PREFIX: code-index-faiss
+          EMBED_S3_PREFIX: code-index
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

@@ -24,7 +24,7 @@ jobs:
       - name: Build, tag, and push image
         env:
           ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com
-          ECR_REPOSITORY: lambda-langchain
+          ECR_REPOSITORY: agentq
           IMAGE_TAG: latest
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
@@ -33,6 +33,6 @@ jobs:
       - name: Deploy Lambda
         run: |
           aws lambda update-function-code \
-            --function-name my-langchain-agent \
-            --image-uri ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/lambda-langchain:latest \
+            --function-name agent4_code_analyst \
+            --image-uri ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/agentq:latest \
             --region eu-west-1

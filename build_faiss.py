@@ -12,7 +12,7 @@ from langchain_aws.embeddings import BedrockEmbeddings
 
 AWS_REGION = os.getenv("AWS_REGION", "eu-west-1")
 S3_BUCKET  = os.getenv("EMBED_S3_BUCKET", "monitoring-agent-embeddings-repo")
-S3_PREFIX  = os.getenv("EMBED_S3_PREFIX", "code-index-faiss")
+S3_PREFIX  = os.getenv("EMBED_S3_PREFIX", "code-index")
 GH_TOKEN   = os.getenv("GITHUB_TOKEN", "")
 
 s3 = boto3.client("s3", region_name=AWS_REGION)
