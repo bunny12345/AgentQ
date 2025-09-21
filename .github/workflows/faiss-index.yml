@@ -1,8 +1,7 @@
 name: Build & Upload FAISS Index
 
 on:
-  push:
-    branches: [ "main" ]
+  workflow_dispatch:
   # schedule:
   #   - cron: "0 3 * * *"   # run daily at 03:00 UTC
   workflow_dispatch:
@@ -19,7 +18,9 @@ jobs:
           python-version: "3.11"
 
       - name: Install deps
-        run: pip install boto3 langchain langchain-community langchain-aws
+        run: |
+          pip install boto3 langchain langchain-community langchain-aws
+          pip install faiss-cpu==1.7.4
 
       - name: Run FAISS index build
         env:

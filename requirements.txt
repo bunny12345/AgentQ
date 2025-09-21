@@ -3,4 +3,4 @@ botocore
 langchain
 langchain-community
 langchain-aws
-faiss-cpu
+
