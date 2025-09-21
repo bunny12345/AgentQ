@@ -3,5 +3,4 @@ botocore
 langchain
 langchain-community
 langchain-aws
-faiss-cpu==1.7.4
-numpy==1.23.5
+faiss-cpu
