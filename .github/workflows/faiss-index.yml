@@ -18,8 +18,8 @@ jobs:
           python-version: "3.11"
 
       - name: Install deps
-        run: |
-          pip install boto3 langchain langchain-community langchain-aws
+        run: | 
+          pip install boto3 langchain langchain-community langchain-aws 
           pip install faiss-cpu==1.7.4
 
       - name: Run FAISS index build
