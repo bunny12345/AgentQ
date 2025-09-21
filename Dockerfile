@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/python:3.11
+FROM public.ecr.aws/lambda/python:3.10
 
 # Install system deps
 RUN yum install -y git gcc g++ make
