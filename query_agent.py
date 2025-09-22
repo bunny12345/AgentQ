@@ -178,24 +178,43 @@ def lambda_handler(event, context):
 
         # Define repos to search
         repos = [
-            {"owner": "bunny12345", "repo": "langchain", "branch": "main"},
-            {"owner": "bunny12345", "repo": "monitoring-service", "branch": "main"},
+[        
+          {"owner": "bunny12345", "repo": "langchain", "branch": "main"},
+          {"owner": "bunny12345", "repo": "AgentQ", "branch": "main"},
+          {"owner": "bunny12345", "repo": "chatvista_ai", "branch": "main"},
+          {"owner": "bunny12345", "repo": "ChatbotAi", "branch": "main"}
+]
             # add more repos here
         ]
 
-        result = run_query(query, alert, repos)
+        # 🔥 wrap run_query in debug try/except
+        try:
+            result = run_query(query, alert, repos)
+            return {
+                "statusCode": 200,
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps(result)
+            }
+        except Exception as e:
+            import traceback
+            return {
+                "statusCode": 500,
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps({
+                    "error": str(e),
+                    "traceback": traceback.format_exc()
+                })
+            }
 
-        return {
-            "statusCode": 200,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps(result)
-        }
-
-    except Exception as e:
+    except Exception as outer:
+        import traceback
         return {
             "statusCode": 500,
             "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"error": str(e)})
+            "body": json.dumps({
+                "error": str(outer),
+                "traceback": traceback.format_exc()
+            })
         }
 
 # ==================== CLI ====================
