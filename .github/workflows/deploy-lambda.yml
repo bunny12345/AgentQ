@@ -44,12 +44,10 @@ jobs:
         #     --image-uri ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/agentq:latest
       - name: Deploy Lambda
         run: |
-          # Delete if it exists
           aws lambda delete-function \
             --function-name agent4_code_analyst \
             --region eu-west-1 || true
       
-          # Recreate as image-based Lambda
           aws lambda create-function \
             --function-name agent4_code_analyst \
             --package-type Image \
