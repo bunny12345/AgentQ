@@ -120,41 +120,52 @@ def _make_llm():
 
 # ==================== MAIN QUERY ====================
 def run_query(query: str, alert: str, repos: List[Dict[str, str]]) -> Dict[str, Any]:
-    retrievers = []
-    for r in repos:
-        try:
-            retrievers.append(_load_faiss_from_s3(r["owner"], r["repo"], r.get("branch", "main")))
-        except Exception as e:
-            print(f"Failed to load repo {r}: {e}")
+    try:
+        retrievers = []
+        for r in repos:
+            if not isinstance(r, dict):
+                raise TypeError(f"Repo entry is not a dict: {r}")
+            try:
+                retrievers.append(_load_faiss_from_s3(r["owner"], r["repo"], r.get("branch", "main")))
+            except Exception as e:
+                return {"error": f"Failed to load repo {r}", "detail": str(e)}
 
-    if not retrievers:
-        return {"error": "no_index", "hint": "No FAISS indexes loaded."}
+        if not retrievers:
+            return {"error": "no_index", "hint": "No FAISS indexes loaded."}
 
-    if len(retrievers) == 1:
-        RETRIEVER = retrievers[0]
-    else:
-        RETRIEVER = EnsembleRetriever(retrievers=retrievers, weights=[1.0]*len(retrievers))
+        if len(retrievers) == 1:
+            RETRIEVER = retrievers[0]
+        else:
+            RETRIEVER = EnsembleRetriever(retrievers=retrievers, weights=[1.0]*len(retrievers))
 
-    docs = RETRIEVER.invoke((query or "") + "\n" + (alert or ""))[:TOP_K]
+        docs = RETRIEVER.invoke((query or "") + "\n" + (alert or ""))[:TOP_K]
 
-    if docs:
-        context = "\n\n".join([f"{d.metadata['repo']}:{d.metadata['path']}:{d.metadata['line_start']}-{d.metadata['line_end']}\n{d.page_content}" for d in docs])
-        prompt = (
-            f"You are an assistant. Use ONLY these snippets to answer.\n\n"
-            f"USER QUESTION:\n{query or '(no question)'}\n\n"
-            f"ALERT:\n{alert or '(none)'}\n\n"
-            f"CODE CONTEXT:\n{context}\n\nAnswer clearly and concisely."
-        )
-        resp = _make_llm().invoke(prompt)
-        return {"answer": resp.content, "from": "repo"}
-    else:
-        if looks_infra(query + " " + alert):
-            qresp = amazon_q_fallback(query or alert or "infra question", tries=2)
-            if "answer" in qresp:
-                return {"answer": qresp["answer"], "from": "amazon_q"}
-            else:
-                return {"error": "amazon_q_unavailable", "detail": qresp, "from": "fallback"}
-        return {"answer": "No relevant snippets found.", "from": "none"}
+        if docs:
+            context = "\n\n".join([
+                f"{d.metadata.get('repo')}:{d.metadata.get('path')}:{d.metadata.get('line_start')}-{d.metadata.get('line_end')}\n{d.page_content}"
+                for d in docs
+            ])
+            prompt = (
+                f"You are an assistant. Use ONLY these snippets to answer.\n\n"
+                f"USER QUESTION:\n{query or '(no question)'}\n\n"
+                f"ALERT:\n{alert or '(none)'}\n\n"
+                f"CODE CONTEXT:\n{context}\n\nAnswer clearly and concisely."
+            )
+            resp = _make_llm().invoke(prompt)
+            return {"answer": resp.content, "from": "repo"}
+        else:
+            if looks_infra(query + " " + alert):
+                qresp = amazon_q_fallback(query or alert or "infra question", tries=2)
+                if "answer" in qresp:
+                    return {"answer": qresp["answer"], "from": "amazon_q"}
+                else:
+                    return {"error": "amazon_q_unavailable", "detail": qresp, "from": "fallback"}
+            return {"answer": "No relevant snippets found.", "from": "none"}
+
+    except Exception as e:
+        import traceback
+        return {"error": str(e), "traceback": traceback.format_exc()}
+
 
 # ==================== LAMBDA HANDLER ====================
 # ==================== LAMBDA HANDLER ====================
