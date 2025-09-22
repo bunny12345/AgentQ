@@ -30,29 +30,29 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-      # - name: Deploy Lambda
-        # run: |
-        #   aws lambda create-function \
-        #     --function-name agent4_code_analyst \
-        #     --package-type Image \
-        #     --code ImageUri=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/agentq:latest \
-        #     --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/agent4_code_analyst \
-        #     --region eu-west-1
-        #     || \
-        #   aws lambda update-function-code \
-        #     --function-name agent4_code_analyst \
-        #     --image-uri ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/agentq:latest
       - name: Deploy Lambda
         run: |
-          aws lambda delete-function \
-            --function-name agent4_code_analyst \
-            --region eu-west-1 || true
-      
           aws lambda create-function \
             --function-name agent4_code_analyst \
             --package-type Image \
             --code ImageUri=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/agentq:latest \
             --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/agent4_code_analyst \
             --region eu-west-1
+            || \
+          aws lambda update-function-code \
+            --function-name agent4_code_analyst \
+            --image-uri ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/agentq:latest
+      # - name: Deploy Lambda
+      #   run: |
+      #     aws lambda delete-function \
+      #       --function-name agent4_code_analyst \
+      #       --region eu-west-1 || true
+      
+      #     aws lambda create-function \
+      #       --function-name agent4_code_analyst \
+      #       --package-type Image \
+      #       --code ImageUri=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/agentq:latest \
+      #       --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/agent4_code_analyst \
+      #       --region eu-west-1
         
         
