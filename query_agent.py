@@ -157,20 +157,26 @@ def run_query(query: str, alert: str, repos: List[Dict[str, str]]) -> Dict[str, 
         return {"answer": "No relevant snippets found.", "from": "none"}
 
 # ==================== LAMBDA HANDLER ====================
+# ==================== LAMBDA HANDLER ====================
 def lambda_handler(event, context):
     """
     AWS Lambda entrypoint.
-    Expects JSON event like:
-      {
-        "query": "what llm model is used?",
-        "alert": "error: failed to apply manifest"
-      }
+    Handles both direct Lambda invoke events and API Gateway proxy events.
     """
-    try:
-        query = (event.get("query") or "").strip()
-        alert = (event.get("alert") or "").strip()
 
-        # Define repos you want to always keep in sync
+    try:
+        # If invoked via API Gateway, body will be a JSON string
+        if "body" in event and isinstance(event["body"], str):
+            body = json.loads(event["body"] or "{}")
+        elif "body" in event and isinstance(event["body"], dict):
+            body = event["body"]
+        else:
+            body = event  # direct Lambda invoke
+
+        query = (body.get("query") or "").strip()
+        alert = (body.get("alert") or "").strip()
+
+        # Define repos to search
         repos = [
             {"owner": "bunny12345", "repo": "langchain", "branch": "main"},
             {"owner": "bunny12345", "repo": "monitoring-service", "branch": "main"},
@@ -178,16 +184,20 @@ def lambda_handler(event, context):
         ]
 
         result = run_query(query, alert, repos)
+
         return {
             "statusCode": 200,
+            "headers": {"Content-Type": "application/json"},
             "body": json.dumps(result)
         }
 
     except Exception as e:
         return {
             "statusCode": 500,
+            "headers": {"Content-Type": "application/json"},
             "body": json.dumps({"error": str(e)})
         }
+
 # ==================== CLI ====================
 if __name__ == "__main__":
     user_query = input("Query (optional): ").strip()
