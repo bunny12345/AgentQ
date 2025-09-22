@@ -35,7 +35,6 @@ jobs:
           aws lambda update-function-code \
             --function-name agent4_code_analyst \
             --image-uri ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/agentq:latest
-            --region eu-west-1
       # - name: Deploy Lambda
       #   run: |
       #     aws lambda delete-function \
