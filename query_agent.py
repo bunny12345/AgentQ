@@ -25,7 +25,7 @@ from langchain.agents import AgentExecutor
 AWS_REGION = os.getenv("AWS_REGION", "eu-west-1")
 
 S3_BUCKET  = os.getenv("EMBED_S3_BUCKET", "monitoring-agent-embeddings-repo")
-S3_PREFIX  = os.getenv("EMBED_S3_PREFIX", "repos")
+S3_PREFIX  = os.getenv("EMBED_S3_PREFIX", "code-index")
 
 AMAZON_Q_APP_ID  = os.getenv("AMAZON_Q_APP_ID", "")
 AMAZON_Q_USER_ID = os.getenv("AMAZON_Q_USER_ID", "")
@@ -169,6 +169,12 @@ def run_query(query: str, alert: str, repos: List[Dict[str, str]]) -> Dict[str, 
 
 # ==================== LAMBDA HANDLER ====================
 # ==================== LAMBDA HANDLER ====================
+
+import logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+logger.info("EVENT: %s", json.dumps(event))
+
 def lambda_handler(event, context):
     """
     AWS Lambda entrypoint.
