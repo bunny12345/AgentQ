@@ -47,7 +47,16 @@ def _faiss_local_path(repo_key: str) -> str:
     return f"/tmp/{repo_key}_faiss"
 
 def _faiss_s3_key(owner: str, repo: str, branch: str = "main") -> str:
-    return f"{S3_PREFIX}/{owner}/{repo}/{branch}/faiss.tar.gz"
+    # Try stable path first
+    stable = f"repos/{owner}/{repo}/{branch}/faiss.tar.gz"
+    try:
+        s3.head_object(Bucket=S3_BUCKET, Key=stable)
+        return stable
+    except ClientError:
+        # Fallback to code-index with latest sha
+        sha = "latest"  # or fetch from your GitHub helper
+        return f"code-index/{owner}__{repo}__{branch}__{sha}.tar.gz"
+
 
 def _load_faiss_from_s3(owner: str, repo: str, branch: str = "main") -> EnsembleRetriever:
     repo_key = f"{owner}_{repo}_{branch}"
@@ -169,11 +178,9 @@ def run_query(query: str, alert: str, repos: List[Dict[str, str]]) -> Dict[str, 
 
 # ==================== LAMBDA HANDLER ====================
 # ==================== LAMBDA HANDLER ====================
-
 import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-logger.info("EVENT: %s", json.dumps(event))
 
 def lambda_handler(event, context):
     """
@@ -181,6 +188,7 @@ def lambda_handler(event, context):
     Handles both direct Lambda invoke events and API Gateway proxy events.
     """
 
+    logger.info("EVENT: %s", json.dumps(event))
     try:
         # Normalize API Gateway body
         body = {}
