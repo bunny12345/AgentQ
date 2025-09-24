@@ -176,13 +176,23 @@ def lambda_handler(event, context):
     """
 
     try:
-        # If invoked via API Gateway, body will be a JSON string
-        if "body" in event and isinstance(event["body"], str):
-            body = json.loads(event["body"] or "{}")
-        elif "body" in event and isinstance(event["body"], dict):
-            body = event["body"]
+        # Normalize API Gateway body
+        body = {}
+        if "body" in event:
+            raw_body = event["body"]
+
+            # Decode base64 if API Gateway says so
+            if event.get("isBase64Encoded"):
+                import base64
+                raw_body = base64.b64decode(raw_body).decode("utf-8")
+
+            if isinstance(raw_body, str):
+                body = json.loads(raw_body or "{}")
+            elif isinstance(raw_body, dict):
+                body = raw_body
         else:
-            body = event  # direct Lambda invoke
+            # Direct Lambda invoke
+            body = event if isinstance(event, dict) else {}
 
         query = (body.get("query") or "").strip()
         alert = (body.get("alert") or "").strip()
@@ -224,6 +234,7 @@ def lambda_handler(event, context):
                 "traceback": traceback.format_exc()
             })
         }
+
 
 # ==================== CLI ====================
 if __name__ == "__main__":
