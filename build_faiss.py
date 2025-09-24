@@ -6,8 +6,6 @@ import boto3
 from botocore.exceptions import ClientError
 from langchain_core.documents import Document
 from langchain_community.vectorstores import FAISS
-from langchain_community.retrievers import BM25Retriever
-from langchain.retrievers import EnsembleRetriever
 from langchain_aws.embeddings import BedrockEmbeddings
 
 AWS_REGION = os.getenv("AWS_REGION", "eu-west-1")
@@ -23,7 +21,8 @@ EXCLUDE_DIRS = ("node_modules","dist","build",".git",".cache","venv","__pycache_
 
 def _gh_headers():
     h = {"Accept": "application/vnd.github+json", "User-Agent": "agent-indexer"}
-    if GH_TOKEN: h["Authorization"] = f"token {GH_TOKEN}"
+    if GH_TOKEN: 
+        h["Authorization"] = f"token {GH_TOKEN}"
     return h
 
 def _http_json(url: str):
@@ -50,16 +49,36 @@ def _gh_file(owner: str, repo: str, path: str, ref: str) -> str:
         return ""
 
 def _should_index(path: str) -> bool:
-    if any(d in path for d in EXCLUDE_DIRS): return False
+    if any(d in path for d in EXCLUDE_DIRS): 
+        return False
     return path.endswith(CODE_EXTS) or any(path.endswith(ext) for ext in CODE_EXTS)
 
 def index_repo(owner: str, repo: str, branch: str="main"):
     sha = _gh_latest_sha(owner, repo, branch)
-    key = f"{S3_PREFIX}/{owner}__{repo}__{branch}__{sha}.tar.gz"
+    sha_key     = f"{S3_PREFIX}/{owner}__{repo}__{branch}__{sha}.tar.gz"
+    stable_key  = f"{S3_PREFIX}/{owner}/{repo}/{branch}/faiss.tar.gz"
 
-    # Skip if already uploaded
+    already_indexed = False
     try:
-        s3.head_object(Bucket=S3_BUCKET, Key=key)
+        s3.head_object(Bucket=S3_BUCKET, Key=sha_key)
+        already_indexed = True
+    except ClientError:
+        pass
+
+    if already_indexed:
+        print(f"[INFO] {owner}/{repo}@{branch} already indexed at {sha}, syncing stable alias...")
+        # just copy instead of rebuilding
+        s3.copy_object(
+            Bucket=S3_BUCKET,
+            CopySource={"Bucket": S3_BUCKET, "Key": sha_key},
+            Key=stable_key
+        )
+        print(f"[OK] Synced {stable_key} -> {sha_key}")
+        return
+
+    # Skip if already uploaded with this SHA
+    try:
+        s3.head_object(Bucket=S3_BUCKET, Key=sha_key)
         print(f"[SKIP] {owner}/{repo}@{branch} already indexed at {sha}")
         return
     except ClientError:
@@ -68,11 +87,14 @@ def index_repo(owner: str, repo: str, branch: str="main"):
     tree = _gh_tree(owner, repo, sha)
     docs = []
     for node in tree.get("tree", []):
-        if node.get("type") != "blob": continue
+        if node.get("type") != "blob": 
+            continue
         path = node["path"]
-        if not _should_index(path): continue
+        if not _should_index(path): 
+            continue
         content = _gh_file(owner, repo, path, sha)
-        if not content.strip(): continue
+        if not content.strip(): 
+            continue
         docs.append(Document(page_content=content, metadata={"path": path,"repo":repo,"sha":sha}))
 
     if not docs:
@@ -83,10 +105,14 @@ def index_repo(owner: str, repo: str, branch: str="main"):
     with tempfile.TemporaryDirectory() as td:
         faiss.save_local(td)
         tarpath = os.path.join(td, "faiss.tar.gz")
-        with tarfile.open(tarpath, "w:gz") as tf: tf.add(td, arcname="faiss")
+        with tarfile.open(tarpath, "w:gz") as tf: 
+            tf.add(td, arcname="faiss")
         with open(tarpath,"rb") as f:
-            s3.put_object(Bucket=S3_BUCKET, Key=key, Body=f)
-    print(f"[OK] Indexed {owner}/{repo}@{sha}, uploaded to {key}")
+            data = f.read()
+            # Upload both versions
+            s3.put_object(Bucket=S3_BUCKET, Key=sha_key, Body=data)
+            s3.put_object(Bucket=S3_BUCKET, Key=stable_key, Body=data)
+    print(f"[OK] Indexed {owner}/{repo}@{sha}, uploaded to {sha_key} and {stable_key}")
 
 if __name__=="__main__":
     repos = json.loads(open("repos.json").read())

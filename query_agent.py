@@ -33,7 +33,7 @@ AMAZON_Q_USER_ID = os.getenv("AMAZON_Q_USER_ID", "")
 LLM_MODEL_ID   = os.getenv("LLM_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
 EMBED_MODEL_ID = os.getenv("EMBED_MODEL_ID", "amazon.titan-embed-text-v2:0")
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
-LLM_MAX_TOKENS  = int(os.getenv("LLM_MAX_TOKENS", "800"))
+LLM_MAX_TOKENS  = int(os.getenv("LLM_MAX_TOKENS", "600"))
 
 TOP_K = int(os.getenv("TOP_K", "8"))
 
@@ -233,7 +233,8 @@ if __name__ == "__main__":
 
     repos = [
         {"owner": "bunny12345", "repo": "langchain", "branch": "main"},
-        {"owner": "bunny12345", "repo": "monitoring-service", "branch": "main"},
+        {"owner": "bunny12345", "repo": "AgentQ", "branch": "main"},
+        {"owner": "bunny12345", "repo": "chatvista_ai", "branch": "main"}
         # add more repos here
     ]
 
