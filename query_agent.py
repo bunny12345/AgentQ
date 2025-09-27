@@ -103,7 +103,14 @@ def run_query(query: str, alert: str, repos: List[Dict[str,str]]) -> Dict[str, A
     if not context_parts:
         return {"answer": "No relevant snippets or commits found.", "from": "none"}
 
-    prompt = f"You are an assistant. Use ONLY these snippets and commit diffs.\n\nQUESTION: {query}\nALERT: {alert}\n\nCONTEXT:\n{'\n\n'.join(context_parts)}"
+    context_str = "\n\n".join(context_parts)
+    prompt = (
+       f"You are an assistant. Use ONLY these snippets and commit diffs.\n\n"
+       f"QUESTION: {query}\n"
+       f"ALERT: {alert}\n\n"
+       f"CONTEXT:\n{context_str}"
+    )
+
     resp = _make_llm().invoke(prompt)
     return {"answer": resp.content, "from": "repo+commits"}
 
