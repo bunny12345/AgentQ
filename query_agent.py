@@ -114,6 +114,78 @@ def run_query(query: str, alert: str, repos: List[Dict[str,str]]) -> Dict[str, A
     resp = _make_llm().invoke(prompt)
     return {"answer": resp.content, "from": "repo+commits"}
 
+
+# ==================== LAMBDA HANDLER ====================
+import logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+def lambda_handler(event, context):
+    """
+    AWS Lambda entrypoint.
+    Handles both direct Lambda invoke events and API Gateway proxy events.
+    """
+
+    logger.info("EVENT: %s", json.dumps(event))
+    try:
+        # Normalize API Gateway body
+        body = {}
+        if "body" in event:
+            raw_body = event["body"]
+
+            # Decode base64 if API Gateway says so
+            if event.get("isBase64Encoded"):
+                import base64
+                raw_body = base64.b64decode(raw_body).decode("utf-8")
+
+            if isinstance(raw_body, str):
+                body = json.loads(raw_body or "{}")
+            elif isinstance(raw_body, dict):
+                body = raw_body
+        else:
+            # Direct Lambda invoke
+            body = event if isinstance(event, dict) else {}
+
+        query = (body.get("query") or "").strip()
+        alert = (body.get("alert") or "").strip()
+
+        # Define repos to search
+        repos = [
+            {"owner": "bunny12345", "repo": "langchain", "branch": "main"},
+            {"owner": "bunny12345", "repo": "AgentQ", "branch": "main"},
+            {"owner": "bunny12345", "repo": "chatvista_ai", "branch": "main"},
+            # add more repos here
+        ]
+
+        # 🔥 wrap run_query in debug try/except
+        try:
+            result = run_query(query, alert, repos)
+            return {
+                "statusCode": 200,
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps(result)
+            }
+        except Exception as e:
+            import traceback
+            return {
+                "statusCode": 500,
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps({
+                    "error": str(e),
+                    "traceback": traceback.format_exc()
+                })
+            }
+
+    except Exception as outer:
+        import traceback
+        return {
+            "statusCode": 500,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({
+                "error": str(outer),
+                "traceback": traceback.format_exc()
+            })
+        }
 # ---------------- CLI ----------------
 if __name__ == "__main__":
     q = input("Query: ").strip()
