@@ -116,7 +116,9 @@ def run_query(query: str, alert: str, repos: List[Dict[str,str]]) -> Dict[str, A
 
 
 # ==================== LAMBDA HANDLER ====================
+import json
 import logging
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -129,11 +131,10 @@ def lambda_handler(event, context):
     logger.info("EVENT: %s", json.dumps(event))
     try:
         # Normalize API Gateway body
-        body = {}
         if "body" in event:
             raw_body = event["body"]
 
-            # Decode base64 if API Gateway says so
+            # Decode base64 if needed
             if event.get("isBase64Encoded"):
                 import base64
                 raw_body = base64.b64decode(raw_body).decode("utf-8")
@@ -142,16 +143,11 @@ def lambda_handler(event, context):
                 body = json.loads(raw_body or "{}")
             elif isinstance(raw_body, dict):
                 body = raw_body
+            else:
+                body = {}
         else:
-            # Direct Lambda invoke
             body = event if isinstance(event, dict) else {}
 
-        query = (body.get("query") or "").strip()
-        alert = (body.get("alert") or "").strip()
-
-        # Define repos to search
-        body = json.loads(raw_body or "{}")
-        
         query = (body.get("query") or "").strip()
         alert = (body.get("alert") or "").strip()
         repos = body.get("repos") or [
