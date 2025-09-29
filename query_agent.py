@@ -111,7 +111,7 @@ def run_query(query: str, alert: str, repos: List[Dict[str, str]]) -> Dict[str, 
 
         # ✅ Only include commit diffs if user query mentions commits
         if any(word in query.lower() for word in ["commit", "diff", "change", "modified", "history"]):
-            diffs = _get_recent_commit_diffs(r["owner"], r["repo"], r.get("branch", "main"))
+            diffs = get_recent_commit_diffs(r["owner"], r["repo"], r.get("branch", "main"))
             context_parts.extend(diffs)
 
         if not context_parts:
