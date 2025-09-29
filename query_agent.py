@@ -84,35 +84,53 @@ def _load_faiss_from_s3(owner: str, repo: str, branch: str="main"):
 def _make_llm():
     return ChatBedrock(model_id=LLM_MODEL_ID, region_name=AWS_REGION, temperature=LLM_TEMPERATURE, max_tokens=LLM_MAX_TOKENS)
 
-def run_query(query: str, alert: str, repos: List[Dict[str,str]]) -> Dict[str, Any]:
-    retrievers = []
-    commit_contexts = []
-    for r in repos:
-        retrievers.append(_load_faiss_from_s3(r["owner"], r["repo"], r.get("branch","main")))
-        commit_contexts += get_recent_commit_diffs(r["owner"], r["repo"], r.get("branch","main"), n=3)
+def run_query(query: str, alert: str, repos: List[Dict[str, str]]) -> Dict[str, Any]:
+    try:
+        retrievers = []
+        for r in repos:
+            retrievers.append(
+                _load_faiss_from_s3(r["owner"], r["repo"], r.get("branch", "main"))
+            )
 
-    RETRIEVER = retrievers[0] if len(retrievers) == 1 else EnsembleRetriever(retrievers=retrievers, weights=[1.0]*len(retrievers))
-    docs = RETRIEVER.invoke((query or "") + "\n" + (alert or ""))[:TOP_K]
+        if not retrievers:
+            return {"error": "no_index", "hint": "No FAISS indexes loaded."}
 
-    context_parts = []
-    if docs:
-        context_parts.append("\n\n".join([f"{d.metadata.get('repo')}:{d.metadata.get('path')}\n{d.page_content}" for d in docs]))
-    if commit_contexts:
-        context_parts.append("\n\n".join(commit_contexts))
+        RETRIEVER = retrievers[0] if len(retrievers) == 1 else EnsembleRetriever(
+            retrievers=retrievers, weights=[1.0] * len(retrievers)
+        )
 
-    if not context_parts:
-        return {"answer": "No relevant snippets or commits found.", "from": "none"}
+        docs = RETRIEVER.invoke((query or "") + "\n" + (alert or ""))[:TOP_K]
+        context_parts = []
 
-    context_str = "\n\n".join(context_parts)
-    prompt = (
-       f"You are an assistant. Use ONLY these snippets and commit diffs.\n\n"
-       f"QUESTION: {query}\n"
-       f"ALERT: {alert}\n\n"
-       f"CONTEXT:\n{context_str}"
-    )
+        # ✅ Always include repo docs
+        if docs:
+            context_parts.extend([
+                f"{d.metadata.get('repo')}:{d.metadata.get('path')}\n{d.page_content}"
+                for d in docs
+            ])
 
-    resp = _make_llm().invoke(prompt)
-    return {"answer": resp.content, "from": "repo+commits"}
+        # ✅ Only include commit diffs if user query mentions commits
+        if any(word in query.lower() for word in ["commit", "diff", "change", "modified", "history"]):
+            diffs = _get_recent_commit_diffs(r["owner"], r["repo"], r.get("branch", "main"))
+            context_parts.extend(diffs)
+
+        if not context_parts:
+            return {"answer": "No relevant snippets found.", "from": "none"}
+
+        context_str = "\n\n".join(context_parts)
+        prompt = (
+            f"You are an assistant. Use ONLY these snippets (and commit diffs if provided).\n\n"
+            f"QUESTION: {query}\n"
+            f"ALERT: {alert}\n\n"
+            f"CONTEXT:\n{context_str}"
+        )
+
+        resp = _make_llm().invoke(prompt)
+        return {"answer": resp.content, "from": "repo+commits" if 'commit' in query.lower() else "repo"}
+
+    except Exception as e:
+        import traceback
+        return {"error": str(e), "traceback": traceback.format_exc()}
 
 
 # ==================== LAMBDA HANDLER ====================
