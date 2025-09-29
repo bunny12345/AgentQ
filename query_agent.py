@@ -151,9 +151,9 @@ def lambda_handler(event, context):
 
         # Define repos to search
         repos = [
-            # {"owner": "bunny12345", "repo": "langchain", "branch": "main"},
+            {"owner": "bunny12345", "repo": "langchain", "branch": "main"},
             {"owner": "bunny12345", "repo": "AgentQ", "branch": "main"},
-            # {"owner": "bunny12345", "repo": "chatvista_ai", "branch": "main"},
+            {"owner": "bunny12345", "repo": "chatvista_ai", "branch": "main"},
             # add more repos here
         ]
 
