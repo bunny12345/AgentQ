@@ -150,14 +150,18 @@ def lambda_handler(event, context):
         alert = (body.get("alert") or "").strip()
 
         # Define repos to search
-        repos = [
+        body = json.loads(raw_body or "{}")
+        
+        query = (body.get("query") or "").strip()
+        alert = (body.get("alert") or "").strip()
+        repos = body.get("repos") or [
             {"owner": "bunny12345", "repo": "langchain", "branch": "main"},
             {"owner": "bunny12345", "repo": "AgentQ", "branch": "main"},
             {"owner": "bunny12345", "repo": "chatvista_ai", "branch": "main"},
-            # add more repos here
         ]
 
-        # 🔥 wrap run_query in debug try/except
+
+        #  wrap run_query in debug try/except
         try:
             result = run_query(query, alert, repos)
             return {
